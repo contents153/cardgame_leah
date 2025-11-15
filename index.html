@@ -48,4 +48,391 @@
       margin: 8px 0 12px;
       padding: 8px 10px;
       border-radius: 8px;
-      ba
+      background: #f0f7ff;
+      font-size: 0.9rem;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+    }
+    #controls {
+      margin-bottom: 16px;
+      display: flex;
+      gap: 8px;
+    }
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      background: #3652e0;
+      color: #fff;
+      transition: transform 0.05s ease, box-shadow 0.05s ease, opacity 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+    h2 {
+      margin-top: 16px;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+    }
+    #hand {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      min-height: 120px;
+    }
+    .card {
+      background: #fffdf7;
+      border-radius: 10px;
+      border: 1px solid #e3d8c4;
+      padding: 8px 10px;
+      width: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+    .card-id {
+      font-size: 0.75rem;
+      color: #999;
+      margin-bottom: 2px;
+    }
+    .card-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .card-type {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .card-desc {
+      flex: 1;
+      margin-bottom: 6px;
+      color: #555;
+    }
+    .card button {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 0.8rem;
+      background: #b575ff;
+    }
+    #log {
+      background: #f8f5f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      border: 1px solid #ebdfca;
+    }
+    .log-line {
+      margin-bottom: 4px;
+    }
+    .log-line span {
+      font-weight: 600;
+    }
+    @media (max-width: 600px) {
+      .card {
+        width: 100%;
+      }
+      #game {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <h1>레아 이야기 카드 게임 (프로토타입)</h1>
+    <div id="subtitle">믿음·상처·사랑을 관리하며 레아의 여정을 완주해 보세요.</div>
+
+    <div id="stats">
+      <div><span class="stat-label">믿음:</span> <span id="stat-faith">0</span></div>
+      <div><span class="stat-label">상처:</span> <span id="stat-wounds">0</span></div>
+      <div><span class="stat-label">사랑:</span> <span id="stat-love">0</span></div>
+      <div><span class="stat-label">남은 덱:</span> <span id="stat-deck">0</span>장</div>
+      <div><span class="stat-label">버린 카드:</span> <span id="stat-discard">0</span>장</div>
+    </div>
+
+    <div id="message">게임을 시작했습니다. 손패의 카드를 눌러 사용하세요.</div>
+
+    <div id="controls">
+      <button id="drawBtn">카드 뽑기</button>
+      <button id="restartBtn">다시 시작</button>
+    </div>
+
+    <h2>내 손패</h2>
+    <div id="hand"></div>
+
+    <h2>로그</h2>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    // 32장 덱 데이터 정의
+    const deckData = [
+      { id: "C01", name: "첫째 아들 루벤의 탄생", type: "이벤트", description: "믿음 +1, 상처 -1, 사랑 +1", faith: 1, wounds: -1, love: 1 },
+      { id: "C02", name: "둘째 아들 시므온의 탄생", type: "이벤트", description: "믿음 +1, 상처 -1, 사랑 +1", faith: 1, wounds: -1, love: 1 },
+      { id: "C03", name: "셋째 아들 레위의 탄생", type: "이벤트", description: "믿음 +1, 상처 +0, 사랑 +1", faith: 1, wounds: 0, love: 1 },
+      { id: "C04", name: "넷째 아들 유다의 탄생", type: "축복", description: "믿음 +2, 상처 -1, 사랑 +1", faith: 2, wounds: -1, love: 1 },
+      { id: "C05", name: "언니 라헬과의 비교", type: "시련", description: "믿음 +0, 상처 +2, 사랑 -1", faith: 0, wounds: 2, love: -1 },
+      { id: "C06", name: "야곱의 무심한 시선", type: "시련", description: "믿음 +0, 상처 +2, 사랑 -1", faith: 0, wounds: 2, love: -1 },
+      { id: "C07", name: "레아의 눈물의 기도", type: "기도", description: "믿음 +2, 상처 -1, 사랑 +0", faith: 2, wounds: -1, love: 0 },
+      { id: "C08", name: "하나님이 괴로움을 들으심", type: "축복", description: "믿음 +2, 상처 -2, 사랑 +0", faith: 2, wounds: -2, love: 0 },
+
+      { id: "C09", name: "종 실바를 보내다", type: "관계", description: "믿음 +0, 상처 +1, 사랑 +1", faith: 0, wounds: 1, love: 1 },
+      { id: "C10", name: "라헬과의 필사적인 경쟁", type: "시련", description: "믿음 +0, 상처 +2, 사랑 +0", faith: 0, wounds: 2, love: 0 },
+      { id: "C11", name: "합환채 사건", type: "관계", description: "믿음 +0, 상처 +1, 사랑 +1", faith: 0, wounds: 1, love: 1 },
+      { id: "C12", name: "오늘 밤은 내게로 오라", type: "관계", description: "믿음 +1, 상처 +0, 사랑 +1", faith: 1, wounds: 0, love: 1 },
+      { id: "C13", name: "다시 임신한 레아", type: "축복", description: "믿음 +2, 상처 -1, 사랑 +1", faith: 2, wounds: -1, love: 1 },
+      { id: "C14", name: "잠시 찾아온 평안", type: "축복", description: "믿음 +1, 상처 -1, 사랑 +0", faith: 1, wounds: -1, love: 0 },
+      { id: "C15", name: "시댁 식탁의 어색한 침묵", type: "시련", description: "믿음 +0, 상처 +2, 사랑 +0", faith: 0, wounds: 2, love: 0 },
+      { id: "C16", name: "자녀들의 웃음소리", type: "축복", description: "믿음 +1, 상처 -1, 사랑 +1", faith: 1, wounds: -1, love: 1 },
+
+      { id: "C17", name: "야곱의 마음을 바라는 소망", type: "관계", description: "믿음 +1, 상처 +0, 사랑 +1", faith: 1, wounds: 0, love: 1 },
+      { id: "C18", name: "소망을 내려놓는 결단", type: "믿음", description: "믿음 +2, 상처 +0, 사랑 -1", faith: 2, wounds: 0, love: -1 },
+      { id: "C19", name: "‘이제는 여호와를 찬송하리로다’", type: "믿음", description: "믿음 +3, 상처 -1, 사랑 +0", faith: 3, wounds: -1, love: 0 },
+      { id: "C20", name: "조용한 새벽 묵상", type: "기도", description: "믿음 +2, 상처 -1, 사랑 +0", faith: 2, wounds: -1, love: 0 },
+      { id: "C21", name: "라헬의 눈물", type: "관계", description: "믿음 +1, 상처 +0, 사랑 +1", faith: 1, wounds: 0, love: 1 },
+      { id: "C22", name: "자녀를 축복하는 기도", type: "기도", description: "믿음 +2, 상처 +0, 사랑 +1", faith: 2, wounds: 0, love: 1 },
+      { id: "C23", name: "과거 상처가 떠오르다", type: "시련", description: "믿음 +0, 상처 +2, 사랑 +0", faith: 0, wounds: 2, love: 0 },
+      { id: "C24", name: "상처를 하나님께 올려드리다", type: "믿음", description: "믿음 +2, 상처 -2, 사랑 +0", faith: 2, wounds: -2, love: 0 },
+
+      { id: "C25", name: "자녀의 위로 한마디", type: "축복", description: "믿음 +1, 상처 -1, 사랑 +1", faith: 1, wounds: -1, love: 1 },
+      { id: "C26", name: "작은 선행을 베풀다", type: "행동", description: "믿음 +1, 상처 -1, 사랑 +1", faith: 1, wounds: -1, love: 1 },
+      { id: "C27", name: "하나님이 열어주신 태", type: "믿음", description: "믿음 +2, 상처 -1, 사랑 +0", faith: 2, wounds: -1, love: 0 },
+      { id: "C28", name: "가족을 위한 준비", type: "행동", description: "믿음 +1, 상처 +0, 사랑 +1", faith: 1, wounds: 0, love: 1 },
+      { id: "C29", name: "조용한 안식의 저녁", type: "축복", description: "믿음 +1, 상처 -1, 사랑 +0", faith: 1, wounds: -1, love: 0 },
+      { id: "C30", name: "이름을 짓는 시간", type: "행동", description: "믿음 +1, 상처 +0, 사랑 +1", faith: 1, wounds: 0, love: 1 },
+      { id: "C31", name: "믿음의 고백", type: "믿음", description: "믿음 +2, 상처 -1, 사랑 +0", faith: 2, wounds: -1, love: 0 },
+      { id: "C32", name: "레아의 찬양", type: "믿음", description: "믿음 +3, 상처 -2, 사랑 +1", faith: 3, wounds: -2, love: 1 }
+    ];
+
+    // 상태 변수
+    let deck = [];
+    let hand = [];
+    let discard = [];
+    let stats = { faith: 0, wounds: 0, love: 0 };
+    let gameOver = false;
+
+    // DOM 참조
+    const faithSpan = document.getElementById("stat-faith");
+    const woundsSpan = document.getElementById("stat-wounds");
+    const loveSpan = document.getElementById("stat-love");
+    const deckSpan = document.getElementById("stat-deck");
+    const discardSpan = document.getElementById("stat-discard");
+    const messageDiv = document.getElementById("message");
+    const handDiv = document.getElementById("hand");
+    const logDiv = document.getElementById("log");
+    const drawBtn = document.getElementById("drawBtn");
+    const restartBtn = document.getElementById("restartBtn");
+
+    function shuffle(array) {
+      const arr = array.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function clampStats() {
+      if (stats.faith < 0) stats.faith = 0;
+      if (stats.wounds < 0) stats.wounds = 0;
+      if (stats.love < 0) stats.love = 0;
+    }
+
+    function updateStatsUI() {
+      faithSpan.textContent = stats.faith;
+      woundsSpan.textContent = stats.wounds;
+      loveSpan.textContent = stats.love;
+      deckSpan.textContent = deck.length;
+      discardSpan.textContent = discard.length;
+    }
+
+    function setMessage(text) {
+      messageDiv.textContent = text;
+    }
+
+    function log(text) {
+      const line = document.createElement("div");
+      line.className = "log-line";
+      line.textContent = text;
+      logDiv.appendChild(line);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function renderHand() {
+      handDiv.innerHTML = "";
+      if (hand.length === 0) {
+        const empty = document.createElement("div");
+        empty.style.fontSize = "0.85rem";
+        empty.style.color = "#777";
+        empty.textContent = "손패가 없습니다. 카드를 뽑아보세요.";
+        handDiv.appendChild(empty);
+        return;
+      }
+
+      hand.forEach((card, index) => {
+        const cardEl = document.createElement("div");
+        cardEl.className = "card";
+
+        const idDiv = document.createElement("div");
+        idDiv.className = "card-id";
+        idDiv.textContent = `${card.id} · ${card.type}`;
+        cardEl.appendChild(idDiv);
+
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "card-name";
+        nameDiv.textContent = card.name;
+        cardEl.appendChild(nameDiv);
+
+        const typeDiv = document.createElement("div");
+        typeDiv.className = "card-type";
+        typeDiv.textContent = card.description;
+        cardEl.appendChild(typeDiv);
+
+        const btn = document.createElement("button");
+        btn.textContent = "이 카드 사용";
+        btn.dataset.index = index;
+        cardEl.appendChild(btn);
+
+        handDiv.appendChild(cardEl);
+      });
+    }
+
+    function applyCardEffects(card) {
+      stats.faith += card.faith;
+      stats.wounds += card.wounds;
+      stats.love += card.love;
+      clampStats();
+    }
+
+    function checkEndConditions() {
+      if (stats.wounds >= 12) {
+        gameOver = true;
+        setMessage("엔딩: 상처에 잠긴 레아 — 상처가 너무 커져 버렸습니다.");
+        log("[엔딩] 상처 수치가 12 이상이 되어 패배했습니다.");
+        drawBtn.disabled = true;
+        return;
+      }
+
+      if (stats.faith >= 12 && stats.love >= 10) {
+        gameOver = true;
+        setMessage("엔딩: 레아의 찬양 — ‘이제는 여호와를 찬송하리로다’");
+        log("[엔딩] 믿음과 사랑이 충분히 자라 찬양 엔딩에 도달했습니다.");
+        drawBtn.disabled = true;
+        return;
+      }
+
+      // 덱과 손패가 모두 비었을 때 게임 종료 판정
+      if (deck.length === 0 && hand.length === 0) {
+        gameOver = true;
+        if (stats.faith >= 10 || stats.love >= 8) {
+          setMessage("엔딩: 조용한 성장 — 상처는 남아 있지만, 믿음과 사랑이 자랐습니다.");
+          log("[엔딩] 성장 엔딩에 도달했습니다.");
+        } else {
+          setMessage("엔딩: 미완의 이야기 — 아직 마음의 여정이 남아 있습니다.");
+          log("[엔딩] 수치가 충분히 자라지 않아 미완 엔딩입니다.");
+        }
+        drawBtn.disabled = true;
+        return;
+      }
+    }
+
+    function drawCard() {
+      if (gameOver) return;
+      if (hand.length >= 3) {
+        setMessage("손패가 가득 찼습니다. 먼저 카드를 사용해 보세요.");
+        return;
+      }
+      if (deck.length === 0) {
+        setMessage("덱에 더 이상 카드가 없습니다.");
+        checkEndConditions();
+        return;
+      }
+
+      const card = deck.shift();
+      hand.push(card);
+      log(`[드로우] ${card.id} - ${card.name}`);
+      setMessage("카드를 뽑았습니다. 손패의 카드를 눌러 사용해 보세요.");
+      updateStatsUI();
+      renderHand();
+    }
+
+    function playCard(index) {
+      if (gameOver) return;
+      const card = hand.splice(index, 1)[0];
+      if (!card) return;
+
+      log(`[사용] ${card.id} - ${card.name} (${card.description})`);
+      applyCardEffects(card);
+      discard.push(card);
+      updateStatsUI();
+      renderHand();
+
+      if (!gameOver) {
+        setMessage(`${card.name} 카드를 사용했습니다.`);
+        checkEndConditions();
+        if (!gameOver && deck.length > 0 && hand.length < 3) {
+          // 약간의 템포를 위해 자동 드로우는 하지 않고, 플레이어가 직접 누르도록 둘 수도 있음
+          // 여기서는 간단히 자동 드로우 한 장
+          drawCard();
+        }
+      }
+    }
+
+    function startGame() {
+      deck = shuffle(deckData);
+      hand = [];
+      discard = [];
+      stats = { faith: 2, wounds: 3, love: 0 }; // 시작 기본 수치
+      gameOver = false;
+      logDiv.innerHTML = "";
+      setMessage("게임을 시작했습니다. 카드를 뽑고 사용해 보세요.");
+      log("[시작] 레아의 여정이 시작되었습니다.");
+      drawBtn.disabled = false;
+
+      // 시작 손패 3장
+      for (let i = 0; i < 3; i++) {
+        if (deck.length > 0) {
+          hand.push(deck.shift());
+        }
+      }
+      updateStatsUI();
+      renderHand();
+    }
+
+    // 이벤트 바인딩
+    drawBtn.addEventListener("click", () => {
+      drawCard();
+    });
+
+    restartBtn.addEventListener("click", () => {
+      startGame();
+    });
+
+    handDiv.addEventListener("click", (event) => {
+      if (event.target.tagName === "BUTTON" && event.target.dataset.index != null) {
+        const index = parseInt(event.target.dataset.index, 10);
+        playCard(index);
+      }
+    });
+
+    // 초기화
+    startGame();
+  </script>
+</body>
+</html>
